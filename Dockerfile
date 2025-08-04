@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:1-php8.4-alpine as base
+FROM php:8.4-alpine as base
 WORKDIR /app
 
 ENV COMPOSER_MEMORY_LIMIT=-1
@@ -10,7 +10,7 @@ ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/relea
 
 RUN apk update \
     && apk add --no-cache curl git unzip openssl tar ca-certificates \
-    && install-php-extensions gd bcmath pdo_mysql zip intl opcache pcntl redis @composer \
+    && install-php-extensions gd bcmath pdo_mysql zip intl opcache pcntl redis @composer swoole \
     && rm -rf /var/cache/apk/*
 
 RUN chown -R www-data:www-data /app
@@ -51,4 +51,4 @@ RUN composer install --no-dev --optimize-autoloader --no-cache --no-scripts
 COPY --chown=www-data:www-data . /app/
 RUN composer dump-autoload --optimize
 COPY --from=vite --chown=www-data:www-data /app/public/build ./public/build
-CMD sh -c "php artisan octane:start --host=0.0.0.0 --port=80 --admin-port=2019"
+CMD sh -c "php artisan octane:start --host=0.0.0.0 --port=80"

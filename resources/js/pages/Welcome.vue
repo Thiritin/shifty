@@ -28,18 +28,7 @@ defineProps<{
                 </CardDescription>
                 
                 <div class="space-y-3">
-                    <Button 
-                        asChild 
-                        class="w-full text-white hover:opacity-90" 
-                        style="background-color: #004e4c;"
-                        size="lg"
-                    >
-                        <a href="/auth/eurofurence" class="flex items-center justify-center">
-                            Login with Eurofurence Identity
-                        </a>
-                    </Button>
-                    
-                    <Button asChild class="w-full" size="lg" v-if="canLogin">
+                    <Button class="w-full" size="lg">
                         <a :href="route('login')">
                             Login with Eurofurence Identity
                         </a>

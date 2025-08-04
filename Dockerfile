@@ -51,4 +51,4 @@ RUN composer install --no-dev --optimize-autoloader --no-cache --no-scripts
 COPY --chown=www-data:www-data . /app/
 RUN composer dump-autoload --optimize
 COPY --from=vite --chown=www-data:www-data /app/public/build ./public/build
-CMD sh -c "php artisan octane:start --host=0.0.0.0 --port=80"
+CMD sh -c "php artisan octane:start --host=0.0.0.0 --port=80 --admin-port=2019"

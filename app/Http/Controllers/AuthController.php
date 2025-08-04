@@ -23,6 +23,19 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
+        // Restrict login to users with claim id RD01V78YL72JLKOZ
+        $claims = $socialiteUser->user ?? [];
+        $allowedClaimId = 'RD01V78YL72JLKOZ';
+        $userClaimIds = [];
+        if (isset($claims['groups']) && is_array($claims['groups'])) {
+            $userClaimIds = $claims['groups'];
+        } elseif (isset($claims['groups'])) {
+            $userClaimIds = [$claims['groups']];
+        }
+        if (!in_array($allowedClaimId, $userClaimIds, true)) {
+            return redirect()->route('login')->withErrors(['access' => 'You are not authorized to access this application.']);
+        }
+
         $user = User::updateOrCreate([
             'remote_id' => $socialiteUser->getId(),
         ], [

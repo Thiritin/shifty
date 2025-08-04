@@ -5,7 +5,6 @@ ENV COMPOSER_MEMORY_LIMIT=-1
 ######################################################
 # Step 1 | Install Dependencies
 ######################################################
-# Download  install-php-extension
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
 RUN apk update \

@@ -12,9 +12,7 @@
         "laravel/framework": "^12.0",
         "laravel/octane": "^2.12",
         "laravel/socialite": "^5.23",
-        "laravel/tinker": "^2.10.1",
-        "spiral/roadrunner-cli": "^2.6.0",
-        "spiral/roadrunner-http": "^3.3.0"
+        "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

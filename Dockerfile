@@ -9,7 +9,7 @@ ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/relea
 
 RUN apk update \
     && apk add --no-cache curl git unzip openssl tar ca-certificates \
-    && install-php-extensions gd bcmath pdo_mysql zip intl opcache pcntl redis @composer \
+    && install-php-extensions gd bcmath pdo_mysql zip intl opcache pcntl redis sockets @composer \
     && rm -rf /var/cache/apk/*
 
 RUN chown -R www-data:www-data /app
@@ -25,11 +25,17 @@ COPY .github/docker/php/php.ini $PHP_INI_DIR/conf.d/php.ini
 ######################################################
 FROM base as local
 ######################################################
-# Build Ziggy Package - Vite needs ziggy package available
+# Wayfinder Build - generates typed routes/actions for Vite
+# (needs the full app + PHP, unlike Ziggy which resolved routes at runtime)
 ######################################################
-FROM base as vite-vendor-build
+FROM base as wayfinder-build
 WORKDIR /app
-RUN COMPOSER_ALLOW_SUPERUSER=1 | composer require tightenco/ziggy:^2 --ignore-platform-reqs
+COPY --chown=www-data:www-data composer.json composer.lock /app/
+RUN composer install --optimize-autoloader --no-cache --no-scripts
+COPY --chown=www-data:www-data . /app/
+COPY --chown=www-data:www-data ./.env.build /app/.env
+RUN composer dump-autoload --optimize \
+    && php artisan wayfinder:generate
 ######################################################
 # NodeJS Stage
 ######################################################
@@ -39,7 +45,10 @@ COPY package.json package-lock.json vite.config.ts ./
 RUN npm install --force
 COPY ./resources /app/resources
 COPY ./.env.build /app/.env
-COPY --from=vite-vendor-build /app/vendor/tightenco/ziggy /app/vendor/tightenco/ziggy
+COPY --from=wayfinder-build /app/resources/js/wayfinder /app/resources/js/wayfinder
+COPY --from=wayfinder-build /app/resources/js/actions /app/resources/js/actions
+COPY --from=wayfinder-build /app/resources/js/routes /app/resources/js/routes
+ENV WAYFINDER_COMMAND=true
 RUN npm run build
 ######################################################
 # Production Stage
@@ -50,4 +59,5 @@ RUN composer install --no-dev --optimize-autoloader --no-cache --no-scripts
 COPY --chown=www-data:www-data . /app/
 RUN composer dump-autoload --optimize
 COPY --from=vite --chown=www-data:www-data /app/public/build ./public/build
-CMD sh -c "php artisan octane:start --host=0.0.0.0 --port=80"
+RUN php artisan octane:install --server=roadrunner --no-interaction
+CMD sh -c "php artisan octane:start --host=0.0.0.0 --port=80 --rpc-port=6001"

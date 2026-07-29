@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
+import { update as updateAdminUser } from '@/routes/admin/users'
+import shifts from '@/routes/shifts'
 import { type BreadcrumbItem } from '@/types'
 import { Head, Link } from '@inertiajs/vue3'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -121,7 +123,7 @@ const updateUser = () => {
     if (!editingUser.value || processing.value) return
     
     processing.value = true
-    router.put(route('admin.users.update', editingUser.value.id), userForm.value, {
+    router.put(updateAdminUser.url(editingUser.value.id), userForm.value, {
         onFinish: () => {
             processing.value = false
             closeEditModal()
@@ -155,7 +157,7 @@ const closeEditModal = () => {
                 
                 <div class="flex items-center gap-2">
                     <Button variant="outline" size="sm" as-child>
-                        <a :href="route('shifts.index')">
+                        <a :href="shifts.index.url()">
                             <ArrowLeft class="mr-2 h-4 w-4" />
                             Back to Shifts
                         </a>

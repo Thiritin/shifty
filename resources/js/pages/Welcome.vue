@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { login } from '@/routes'
 import { Shield, ExternalLink } from 'lucide-vue-next'
 
 defineProps<{
@@ -29,7 +30,7 @@ defineProps<{
                 
                 <div class="space-y-3">
                     <Button class="w-full" size="lg">
-                        <a :href="route('login')">
+                        <a :href="login().url">
                             Login with Eurofurence Identity
                         </a>
                     </Button>

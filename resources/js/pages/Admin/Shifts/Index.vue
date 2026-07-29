@@ -2,6 +2,9 @@
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
+import adminShifts from '@/routes/admin/shifts'
+import adminUsers from '@/routes/admin/users'
+import shifts from '@/routes/shifts'
 import { type BreadcrumbItem } from '@/types'
 import { Head, Link } from '@inertiajs/vue3'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -101,20 +104,19 @@ const navigateWeek = (direction: number) => {
     currentDate.setDate(currentDate.getDate() + (direction * 7))
     const newWeek = currentDate.toISOString().split('T')[0]
     
-    router.get(route('admin.shifts.index'), { week: newWeek })
+    router.get(shifts.index.url(), { week: newWeek })
 }
 
 const assignUserToShift = (shiftId: number, userId: number) => {
     processing.value = true
-    router.post(route('admin.shifts.assign', shiftId), { user_id: userId }, {
+    router.post(adminShifts.assign.url({ shift: shiftId, user: userId }), {}, {
         onFinish: () => processing.value = false
     })
 }
 
 const removeUserFromShift = (shiftId: number, userId: number) => {
     processing.value = true
-    router.delete(route('admin.shifts.unassign', shiftId), { 
-        data: { user_id: userId },
+    router.delete(adminShifts.unassign.url({ shift: shiftId, user: userId }), {
         onFinish: () => processing.value = false
     })
 }
@@ -145,7 +147,7 @@ const getShiftStatus = (shift: Shift) => {
                 
                 <div class="flex items-center space-x-2">
                     <Button asChild variant="outline">
-                        <Link :href="route('admin.users.index')">
+                        <Link :href="adminUsers.index()">
                             <Users class="mr-2 h-4 w-4" />
                             Manage Users
                         </Link>
@@ -168,7 +170,7 @@ const getShiftStatus = (shift: Shift) => {
                     </div>
                     
                     <Button asChild variant="outline" size="sm">
-                        <Link :href="route('shifts.index', { week: currentWeek })">
+                        <Link :href="shifts.index({ query: { week: currentWeek } })">
                             <Settings class="mr-2 h-4 w-4" />
                             User View
                         </Link>

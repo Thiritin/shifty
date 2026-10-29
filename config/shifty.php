@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'installed' => false,
     'organization' => null,
     'default_shifts_expected' => env('DEFAULT_SHIFTS_EXPECTED', 0),
     'self_registration' => true,

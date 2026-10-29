@@ -11,5 +11,7 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->withoutVite();
+
+        config(['shifty.installed' => true]);
     }
 }

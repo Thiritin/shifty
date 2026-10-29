@@ -3,12 +3,16 @@
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\BrandAssetController;
+use App\Http\Controllers\InstallController;
 use App\Http\Controllers\ShiftController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::get('brand/{name}', BrandAssetController::class)->name('brand.asset');
+
+Route::get('install', [InstallController::class, 'show'])->name('install');
+Route::post('install', [InstallController::class, 'store'])->middleware('throttle:10,1')->name('install.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [ShiftController::class, 'dashboard'])->name('dashboard');

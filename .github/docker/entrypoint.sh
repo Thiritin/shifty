@@ -1,8 +1,6 @@
-echo -e "Starting cron jobs."
-crond -L /var/log/crond -l 5
+#!/bin/sh
+set -e
 
-echo -e "Migrate Database"
 php artisan migrate --force
 
-echo -e "Start Supervisor"
 exec "$@"

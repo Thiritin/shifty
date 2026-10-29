@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminShiftController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\ShiftController;
 use Illuminate\Support\Facades\Route;
@@ -27,7 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('shifts/{shift}', [ShiftController::class, 'destroy'])->name('admin.shifts.destroy');
         Route::post('shifts/{shift}/assign/{user}', [ShiftController::class, 'adminAssign'])->name('admin.shifts.assign');
         Route::delete('shifts/{shift}/unassign/{user}', [ShiftController::class, 'adminUnassign'])->name('admin.shifts.unassign');
-        
+
         Route::get('admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::put('admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
     });

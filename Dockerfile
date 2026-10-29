@@ -60,4 +60,6 @@ COPY --chown=www-data:www-data . /app/
 RUN composer dump-autoload --optimize
 COPY --from=vite --chown=www-data:www-data /app/public/build ./public/build
 RUN php artisan octane:install --server=frankenphp --no-interaction
-CMD sh -c "php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=80 --admin-port=2020"
+COPY --chmod=0755 .github/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=80", "--admin-port=2020"]

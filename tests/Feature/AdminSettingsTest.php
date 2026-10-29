@@ -66,6 +66,22 @@ class AdminSettingsTest extends TestCase
         );
     }
 
+    public function test_event_days_drive_the_availability_page()
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->post('/admin/settings', $this->payload(['event_start' => '2026-08-19', 'event_end' => '2026-08-21']))
+            ->assertSessionHasNoErrors();
+
+        $this->get('/settings/availability')->assertInertia(fn (Assert $page) => $page
+            ->where('grid.days', ['2026-08-19', '2026-08-20', '2026-08-21'])
+        );
+
+        $this->post('/admin/settings', $this->payload(['event_start' => '2026-08-21', 'event_end' => '2026-08-19']))
+            ->assertSessionHasErrors('event_end');
+    }
+
     public function test_clearing_a_value_falls_back_to_the_default()
     {
         $admin = User::factory()->create(['is_admin' => true]);

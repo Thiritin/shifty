@@ -98,9 +98,14 @@ class AvailabilityController extends Controller
      */
     private function grid(User $user): array
     {
-        $shifts = Shift::all();
-        $first = $shifts->map->startsAt()->min() ?? $user->arrival_date;
-        $last = $shifts->map(fn (Shift $s) => $s->endsAt()->subSecond())->max() ?? $user->departure_date;
+        if (config('shifty.event_start') && config('shifty.event_end')) {
+            $first = Carbon::parse(config('shifty.event_start'));
+            $last = Carbon::parse(config('shifty.event_end'));
+        } else {
+            $shifts = Shift::all();
+            $first = $shifts->map->startsAt()->min() ?? $user->arrival_date;
+            $last = $shifts->map(fn (Shift $s) => $s->endsAt()->subSecond())->max() ?? $user->departure_date;
+        }
 
         if (! $first || ! $last) {
             return ['days' => [], 'cells' => (object) [], 'arrivesAt' => null, 'departsAt' => null];

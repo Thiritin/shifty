@@ -22,6 +22,8 @@ const props = defineProps<{
         default_shifts_expected: number
         self_registration: boolean
         timezone: string
+        event_start: string | null
+        event_end: string | null
         accent_color: string | null
         mail_mailer: 'smtp' | 'log'
         mail_host: string | null
@@ -56,6 +58,8 @@ const page = usePage()
 const form = useForm({
     ...props.settings,
     organization: props.settings.organization ?? '',
+    event_start: props.settings.event_start ?? '',
+    event_end: props.settings.event_end ?? '',
     mail_host: props.settings.mail_host ?? '',
     mail_port: props.settings.mail_port ?? ('' as number | ''),
     mail_username: props.settings.mail_username ?? '',
@@ -160,6 +164,18 @@ onBeforeUnmount(() => Object.values(objectUrls).forEach((u) => u && URL.revokeOb
                             <option v-for="tz in timezones" :key="tz" :value="tz" />
                         </datalist>
                         <InputError :message="form.errors.timezone" />
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="event_start">First event day</Label>
+                            <Input id="event_start" v-model="form.event_start" type="date" />
+                            <InputError :message="form.errors.event_start" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="event_end">Last event day</Label>
+                            <Input id="event_end" v-model="form.event_end" type="date" :min="form.event_start || undefined" />
+                            <InputError :message="form.errors.event_end" />
+                        </div>
                     </div>
                 </CardContent>
             </Card>

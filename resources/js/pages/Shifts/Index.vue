@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { type BreadcrumbItem } from '@/types'
@@ -21,6 +21,11 @@ import {
     Plus,
     Minus,
     Printer,
+    CalendarPlus,
+    CalendarRange,
+    LayoutGrid,
+    List,
+    Table2,
     Edit,
     Trash2,
     UserPlus,
@@ -28,11 +33,11 @@ import {
     Settings
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
-
-interface ShiftUser {
-    id: number
-    name: string
-}
+import { useStorage } from '@vueuse/core'
+import ShiftCalendar from '@/components/shifts/ShiftCalendar.vue'
+import ShiftList from '@/components/shifts/ShiftList.vue'
+import ShiftTable from '@/components/shifts/ShiftTable.vue'
+import { day, fillLabel, fillOf, shiftActionsKey, type Fill, type Shift, type ShiftGroup, type ShiftUser } from '@/components/shifts/shared'
 
 interface User {
     id: number
@@ -42,21 +47,6 @@ interface User {
     shift_count: number
     shifts_expected: number
     dog_mood: string
-}
-
-interface Shift {
-    id: number
-    name: string
-    date: string
-    start_time: string
-    end_time: string
-    required_people: number
-    description: string | null
-    assigned_count: number
-    is_assigned: boolean
-    is_full: boolean
-    my_status: 'green' | 'red' | 'neutral'
-    users: ShiftUser[]
 }
 
 const props = defineProps<{
@@ -99,28 +89,41 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Shifts', href: '/shifts' },
 ]
 
-// Group shifts by date
-const groupedShifts = computed(() => {
-    const groups: Record<string, Shift[]> = {}
-    
-    props.shifts.forEach(shift => {
-        if (!groups[shift.date]) {
-            groups[shift.date] = []
-        }
-        groups[shift.date].push(shift)
-    })
-    
-    // Sort by date
-    const sortedGroups: Record<string, Shift[]> = {}
-    Object.keys(groups)
-        .sort()
-        .forEach(date => {
-            sortedGroups[date] = groups[date].sort((a, b) => 
-                a.start_time.localeCompare(b.start_time)
-            )
-        })
-    
-    return sortedGroups
+type View = 'grid' | 'list' | 'table' | 'calendar'
+type GroupBy = 'day' | 'status' | 'shift' | 'mine'
+
+const view = useStorage<View>('shifts.view', 'grid')
+const groupBy = useStorage<GroupBy>('shifts.groupBy', 'day')
+
+const views: { value: View; label: string; icon: typeof LayoutGrid }[] = [
+    { value: 'grid', label: 'Grid', icon: LayoutGrid },
+    { value: 'list', label: 'List', icon: List },
+    { value: 'table', label: 'Table', icon: Table2 },
+    { value: 'calendar', label: 'Calendar', icon: CalendarRange },
+]
+
+const fillOrder: Fill[] = ['empty', 'partial', 'full']
+
+const groups = computed<ShiftGroup[]>(() => {
+    const sorted = [...props.shifts].sort((a, b) => `${day(a)} ${a.start_time}`.localeCompare(`${day(b)} ${b.start_time}`))
+    const keyOf: Record<GroupBy, (s: Shift) => string> = {
+        day,
+        status: fillOf,
+        shift: (s) => s.name,
+        mine: (s) => (s.is_assigned ? 'mine' : 'other'),
+    }
+    const map = new Map<string, Shift[]>()
+    for (const shift of sorted) {
+        const key = keyOf[groupBy.value](shift)
+        map.set(key, [...(map.get(key) ?? []), shift])
+    }
+    const keys = [...map.keys()]
+    if (groupBy.value === 'status') keys.sort((a, b) => fillOrder.indexOf(a as Fill) - fillOrder.indexOf(b as Fill))
+    if (groupBy.value === 'shift') keys.sort((a, b) => a.localeCompare(b))
+    if (groupBy.value === 'mine') keys.sort((a) => (a === 'mine' ? -1 : 1))
+    const label = (key: string) =>
+        ({ day: formatDate(key), status: fillLabel[key as Fill], shift: key, mine: key === 'mine' ? 'Your shifts' : 'Other shifts' })[groupBy.value]
+    return keys.map((key) => ({ key, label: label(key), shifts: map.get(key)! }))
 })
 
 const formatDate = (dateStr: string) => {
@@ -298,6 +301,16 @@ const adminUnassignUser = (userId: number) => {
         }
     })
 }
+provide(shiftActionsKey, {
+    isAdmin: props.user.is_admin,
+    canSelfAssign,
+    processing,
+    signUp: assignToShift,
+    cancel: unassignFromShift,
+    assign: openAssignDialog,
+    edit: openEditDialog,
+    remove: openDeleteDialog,
+})
 </script>
 
 <template>
@@ -313,16 +326,20 @@ const adminUnassignUser = (userId: number) => {
                         Manage your shift assignments and view team schedule
                     </p>
                 </div>
-                <div class="flex gap-2">
-                    <Button v-if="user.is_admin" @click="openCreateDialog" class="mr-2">
+                <div class="flex items-center gap-2">
+                    <Button variant="outline" size="icon" as-child title="Print schedule">
+                        <a href="/shifts/print" target="_blank" rel="noopener" aria-label="Print schedule">
+                            <Printer class="h-4 w-4" />
+                        </a>
+                    </Button>
+                    <Button variant="outline" size="icon" as-child title="Export to calendar">
+                        <a href="/shifts/calendar" aria-label="Export to calendar">
+                            <CalendarPlus class="h-4 w-4" />
+                        </a>
+                    </Button>
+                    <Button v-if="user.is_admin" @click="openCreateDialog">
                         <Plus class="h-4 w-4 mr-2" />
                         Create Shift
-                    </Button>
-                    <Button variant="outline" as-child>
-                        <Link href="/shifts/print">
-                            <Printer class="h-4 w-4 mr-2" />
-                            Print Schedule
-                        </Link>
                     </Button>
                 </div>
             </div>
@@ -377,17 +394,49 @@ const adminUnassignUser = (userId: number) => {
                 </Card>
             </div>
 
-            <!-- Shifts by Date -->
-            <div class="space-y-6">
-                <div v-for="(shifts, date) in groupedShifts" :key="date" class="space-y-4">
+            <div v-if="shifts.length" class="flex flex-wrap items-center justify-between gap-3">
+                <div class="inline-flex rounded-md border p-0.5" role="radiogroup" aria-label="View">
+                    <button
+                        v-for="v in views"
+                        :key="v.value"
+                        type="button"
+                        role="radio"
+                        :aria-checked="view === v.value"
+                        class="inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm transition-colors"
+                        :class="view === v.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        @click="view = v.value"
+                    >
+                        <component :is="v.icon" class="size-4" />
+                        {{ v.label }}
+                    </button>
+                </div>
+                <label v-if="view !== 'calendar'" class="flex items-center gap-2 text-sm text-muted-foreground">
+                    Group by
+                    <select
+                        v-model="groupBy"
+                        class="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                        <option value="day">Day</option>
+                        <option value="status">Status</option>
+                        <option value="shift">Shift</option>
+                        <option value="mine">Your shifts</option>
+                    </select>
+                </label>
+            </div>
+
+            <ShiftList v-if="view === 'list'" :groups="groups" :show-date="groupBy !== 'day'" />
+            <ShiftTable v-else-if="view === 'table'" :groups="groups" :show-date="groupBy !== 'day'" />
+            <ShiftCalendar v-else-if="view === 'calendar'" :shifts="shifts" />
+            <div v-else class="space-y-6">
+                <div v-for="group in groups" :key="group.key" class="space-y-4">
                     <h2 class="text-xl font-semibold flex items-center gap-2">
                         <Calendar class="h-5 w-5" />
-                        {{ formatDate(date) }}
+                        {{ group.label }}
                     </h2>
                     
-                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <Card 
-                            v-for="shift in shifts" 
+                            v-for="shift in group.shifts" 
                             :key="shift.id" 
                             class="hover:shadow-lg transition-all duration-300 hover:scale-105 border-l-4"
                             :class="{
@@ -450,6 +499,7 @@ const adminUnassignUser = (userId: number) => {
                                 <div class="space-y-3">
                                     <div class="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Clock class="h-4 w-4" />
+                                        <span v-if="groupBy !== 'day'">{{ dayjs(shift.date).format('ddd D MMM') }},</span>
                                         {{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }}
                                         <Badge v-if="shift.my_status === 'green'" variant="outline" class="ml-auto border-emerald-600 text-emerald-700 dark:text-emerald-400">Available</Badge>
                                         <Badge v-else-if="shift.my_status === 'red'" variant="outline" class="ml-auto border-red-600 text-red-700 dark:text-red-400">Unavailable</Badge>
@@ -540,13 +590,14 @@ const adminUnassignUser = (userId: number) => {
                     </div>
                 </div>
                 
-                <div v-if="Object.keys(groupedShifts).length === 0" class="text-center py-12">
+            </div>
+
+            <div v-if="!shifts.length" class="text-center py-12">
                     <Calendar class="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 class="text-lg font-medium text-muted-foreground mb-2">No shifts scheduled</h3>
                     <p class="text-sm text-muted-foreground">
                         Check back later for new shift opportunities.
                     </p>
-                </div>
             </div>
         </div>
 

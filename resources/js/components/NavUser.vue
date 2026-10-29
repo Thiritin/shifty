@@ -1,36 +1,61 @@
 <script setup lang="ts">
 import UserInfo from '@/components/UserInfo.vue';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { useAppearance } from '@/composables/useAppearance';
+import { logout } from '@/routes';
 import { type User } from '@/types';
-import { usePage } from '@inertiajs/vue3';
-import { ChevronsUpDown } from 'lucide-vue-next';
-import UserMenuContent from './UserMenuContent.vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { KeyRound, LogOut, Monitor, Moon, Sun } from 'lucide-vue-next';
 
 const page = usePage();
 const user = page.props.auth.user as User;
-const { isMobile, state } = useSidebar();
+const { appearance, updateAppearance } = useAppearance();
+
+const themes = [
+    { value: 'light', icon: Sun, label: 'Light' },
+    { value: 'dark', icon: Moon, label: 'Dark' },
+    { value: 'system', icon: Monitor, label: 'System' },
+] as const;
 </script>
 
 <template>
     <SidebarMenu>
-        <SidebarMenuItem>
-            <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <SidebarMenuButton size="lg" class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                        <UserInfo :user="user" />
-                        <ChevronsUpDown class="ml-auto size-4" />
-                    </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    class="w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                    :side="isMobile ? 'bottom' : state === 'collapsed' ? 'left' : 'bottom'"
-                    align="end"
-                    :side-offset="4"
+        <SidebarMenuItem class="group-data-[collapsible=icon]:hidden">
+            <div class="flex gap-1 rounded-md bg-sidebar-accent/60 p-1" role="radiogroup" aria-label="Appearance">
+                <button
+                    v-for="t in themes"
+                    :key="t.value"
+                    type="button"
+                    role="radio"
+                    :aria-checked="appearance === t.value"
+                    :aria-label="t.label"
+                    :title="t.label"
+                    class="flex flex-1 items-center justify-center rounded-sm py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    :class="appearance === t.value ? 'bg-background text-foreground shadow-xs' : ''"
+                    @click="updateAppearance(t.value)"
                 >
-                    <UserMenuContent :user="user" />
-                </DropdownMenuContent>
-            </DropdownMenu>
+                    <component :is="t.icon" class="size-4" />
+                </button>
+            </div>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+            <SidebarMenuButton as-child :is-active="page.url.startsWith('/settings/password')" tooltip="Password">
+                <Link href="/settings/password">
+                    <KeyRound />
+                    <span>Password</span>
+                </Link>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+            <SidebarMenuButton as-child tooltip="Log out">
+                <Link :href="logout().url" method="post" as="button" class="w-full" @click="router.flushAll()">
+                    <LogOut />
+                    <span>Log out</span>
+                </Link>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem class="flex items-center gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+            <UserInfo :user="user" :show-email="true" />
         </SidebarMenuItem>
     </SidebarMenu>
 </template>

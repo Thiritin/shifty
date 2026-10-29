@@ -6,6 +6,8 @@ return [
     'default_shifts_expected' => env('DEFAULT_SHIFTS_EXPECTED', 0),
     'self_registration' => true,
     'timezone' => 'UTC',
+    'event_start' => null,
+    'event_end' => null,
     'accent_color' => null,
     'assets' => [],
     'password_login' => true,

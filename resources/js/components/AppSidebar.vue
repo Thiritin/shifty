@@ -1,59 +1,27 @@
 <script setup lang="ts">
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, Calendar, Users, FileText, Download, Settings } from 'lucide-vue-next';
-import AppLogo from './AppLogo.vue';
+import { CalendarCheck, CalendarDays, LayoutGrid, Settings, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
+import AppLogo from './AppLogo.vue';
 
 const page = usePage();
-const user = computed(() => page.props.auth?.user || {});
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Shifts',
-        href: '/shifts',
-        icon: Calendar,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Print Schedule',
-        href: '/shifts/print',
-        icon: FileText,
-    },
-    {
-        title: 'Export Calendar',
-        href: '/shifts/calendar',
-        icon: Download,
-    },
-];
-
-// Add admin navigation if user is admin
-if (user.value.is_admin) {
-    footerNavItems.unshift(
-        {
-            title: 'Manage Users',
-            href: '/admin/users',
-            icon: Users,
-        },
-        {
-            title: 'App Settings',
-            href: '/admin/settings',
-            icon: Settings,
-        },
-    );
-}
+const items = computed<NavItem[]>(() => [
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { title: 'My availability', href: '/settings/availability', icon: CalendarCheck },
+    { title: 'Shifts', href: '/shifts', icon: CalendarDays },
+    ...(page.props.auth.user?.is_admin
+        ? [
+              { title: 'Users', href: '/admin/users', icon: Users },
+              { title: 'Settings', href: '/admin/settings', icon: Settings },
+          ]
+        : []),
+]);
 </script>
 
 <template>
@@ -61,8 +29,8 @@ if (user.value.is_admin) {
         <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                    <SidebarMenuButton size="lg" as-child tooltip="Dashboard">
+                        <Link :href="dashboard().url">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -71,11 +39,10 @@ if (user.value.is_admin) {
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="items" />
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

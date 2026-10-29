@@ -21,7 +21,7 @@ jobs:
         run: echo "tag=$(gh release view --repo '${{ github.repository }}' --json tagName --jq .tagName)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout release
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.release.outputs.tag }}
 

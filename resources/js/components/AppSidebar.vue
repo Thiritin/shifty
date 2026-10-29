@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, Calendar, Users, FileText, Download } from 'lucide-vue-next';
+import { LayoutGrid, Calendar, Users, FileText, Download, Settings } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed } from 'vue';
 
@@ -41,11 +41,18 @@ const footerNavItems: NavItem[] = [
 
 // Add admin navigation if user is admin
 if (user.value.is_admin) {
-    footerNavItems.unshift({
-        title: 'Manage Users',
-        href: '/admin/users',
-        icon: Users,
-    });
+    footerNavItems.unshift(
+        {
+            title: 'Manage Users',
+            href: '/admin/users',
+            icon: Users,
+        },
+        {
+            title: 'App Settings',
+            href: '/admin/settings',
+            icon: Settings,
+        },
+    );
 }
 </script>
 

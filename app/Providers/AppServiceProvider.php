@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Providers\Socialite\SocialiteIdentityProvider;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -21,8 +23,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('self-assign', fn (User $user) => $user->is_admin || config('shifty.self_registration'));
+
         Socialite::extend('identity', function ($app) {
             $config = $app['config']['services.identity'];
+
             return Socialite::buildProvider(SocialiteIdentityProvider::class, $config);
         });
     }

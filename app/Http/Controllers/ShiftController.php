@@ -7,6 +7,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class ShiftController extends Controller
@@ -124,6 +126,8 @@ class ShiftController extends Controller
 
     public function assign(Request $request, Shift $shift)
     {
+        Gate::authorize('self-assign');
+
         $user = Auth::user();
 
         if ($shift->is_full) {
@@ -141,6 +145,8 @@ class ShiftController extends Controller
 
     public function unassign(Request $request, Shift $shift)
     {
+        Gate::authorize('self-assign');
+
         $user = Auth::user();
 
         if (!$shift->users->contains($user)) {
@@ -237,27 +243,26 @@ class ShiftController extends Controller
         
         return response($icsContent)
             ->header('Content-Type', 'text/calendar')
-            ->header('Content-Disposition', 'attachment; filename="badge_duty_shifts.ics"');
+            ->header('Content-Disposition', 'attachment; filename="'.Str::slug(config('app.name')).'-shifts.ics"');
     }
 
     private function generateICS($shifts, $user)
     {
         $ics = "BEGIN:VCALENDAR\r\n";
         $ics .= "VERSION:2.0\r\n";
-        $ics .= "PRODID:-//Eurofurence//Badge Duty Shifts//EN\r\n";
+        $ics .= "PRODID:-//".$this->escapeICS(config('app.name'))."//Shifts//EN\r\n";
         $ics .= "CALSCALE:GREGORIAN\r\n";
         
         foreach ($shifts as $shift) {
-            $startDateTime = Carbon::parse($shift->date . ' ' . $shift->start_time);
-            $endDateTime = Carbon::parse($shift->date . ' ' . $shift->end_time);
+            $startDateTime = Carbon::parse($shift->date . ' ' . $shift->start_time, config('shifty.timezone'));
+            $endDateTime = Carbon::parse($shift->date . ' ' . $shift->end_time, config('shifty.timezone'));
             
             $ics .= "BEGIN:VEVENT\r\n";
-            $ics .= "UID:" . $shift->id . "@shifty.eurofurence.org\r\n";
+            $ics .= "UID:" . $shift->id . "@" . parse_url(config('app.url'), PHP_URL_HOST) . "\r\n";
             $ics .= "DTSTART:" . $startDateTime->utc()->format('Ymd\THis\Z') . "\r\n";
             $ics .= "DTEND:" . $endDateTime->utc()->format('Ymd\THis\Z') . "\r\n";
             $ics .= "SUMMARY:" . $this->escapeICS($shift->name) . "\r\n";
-            $ics .= "DESCRIPTION:" . $this->escapeICS($shift->description ?: 'Badge duty shift for Eurofurence') . "\r\n";
-            $ics .= "LOCATION:Badge Distribution Area\r\n";
+            $ics .= "DESCRIPTION:" . $this->escapeICS($shift->description ?: $shift->name) . "\r\n";
             $ics .= "STATUS:CONFIRMED\r\n";
             $ics .= "END:VEVENT\r\n";
         }

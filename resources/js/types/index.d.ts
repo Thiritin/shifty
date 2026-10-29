@@ -21,7 +21,17 @@ export type AppPageProps<T extends Record<string, unknown> = Record<string, unkn
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
+    branding: Branding;
+    selfRegistration: boolean;
+    flash: { success: string | null; error: string | null };
 };
+
+export interface Branding {
+    organization: string | null;
+    logoLight: string | null;
+    logoDark: string | null;
+    accentColor: string | null;
+}
 
 export interface User {
     id: number;

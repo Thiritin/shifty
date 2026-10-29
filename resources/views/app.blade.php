@@ -32,8 +32,13 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        @if ($favicon = \App\Support\Branding::assetUrl('favicon'))
+            <link rel="icon" href="{{ $favicon }}">
+        @else
+            <link rel="icon" href="/favicon.ico" sizes="any">
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        @endif
+
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -41,6 +46,16 @@
 
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
+
+        @if ($accent = config('shifty.accent_color'))
+            <style>
+                :root, .dark {
+                    --primary: {{ $accent }};
+                    --primary-foreground: {{ \App\Support\Branding::foregroundFor($accent) }};
+                    --ring: {{ $accent }};
+                }
+            </style>
+        @endif
     </head>
     <body class="font-sans antialiased">
         @inertia

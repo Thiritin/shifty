@@ -129,7 +129,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">Eurofurence Badge Distribution Team</div>
+        <div class="logo">{{ config('shifty.organization') ?: config('app.name') }}</div>
         <div class="subtitle">Shifts Schedule</div>
         <div class="subtitle">Generated on {{ now()->format('F j, Y \a\t g:i A') }}</div>
     </div>

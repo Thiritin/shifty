@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { type BreadcrumbItem } from '@/types'
 import { Head, Link } from '@inertiajs/vue3'
@@ -159,6 +159,9 @@ const shiftyMood = computed(() => {
 const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
 }
+
+const page = usePage()
+const canSelfAssign = computed(() => page.props.selfRegistration || props.user.is_admin)
 
 const assignToShift = (shiftId: number) => {
     if (processing.value) return
@@ -494,7 +497,7 @@ const adminUnassignUser = (userId: number) => {
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="pt-2">
+                                <div v-if="canSelfAssign" class="pt-2">
                                     <Button 
                                         v-if="!shift.is_assigned && !shift.is_full"
                                         @click="assignToShift(shift.id)"

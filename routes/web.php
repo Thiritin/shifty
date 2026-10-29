@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ShiftController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -8,6 +10,8 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
+
+Route::get('brand/{name}', BrandAssetController::class)->name('brand.asset');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [ShiftController::class, 'dashboard'])->name('dashboard');
@@ -29,6 +33,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::put('admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+
+        Route::get('admin/settings', [SettingsController::class, 'edit'])->name('admin.settings.edit');
+        Route::post('admin/settings', [SettingsController::class, 'update'])->name('admin.settings.update');
+        Route::post('admin/settings/test-mail', [SettingsController::class, 'testMail'])->name('admin.settings.test-mail');
     });
 });
 

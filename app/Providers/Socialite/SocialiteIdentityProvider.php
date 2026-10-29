@@ -43,17 +43,17 @@ class SocialiteIdentityProvider extends AbstractProvider
         if (isset($this->issuer)) {
             return $this;
         }
-        // Get from services.identity.openid_configuration url and cache it
-        $config = Cache::remember('identity_config', now()->addDay(), function () {
-            return Http::get(config('services.identity.openid_configuration'))->throw()->json();
+        $url = config('services.identity.openid_configuration');
+        $config = Cache::remember('identity_config:'.sha1($url), now()->addDay(), function () use ($url) {
+            return Http::get($url)->throw()->json();
         });
         $this->issuer = $config['issuer'];
         $this->userinfoEndpoint = $config['userinfo_endpoint'];
         $this->authorizationEndpoint = $config['authorization_endpoint'];
         $this->tokenEndpoint = $config['token_endpoint'];
         $this->jwksUri = $config['jwks_uri'];
-        $this->endSessionEndpoint = $config['end_session_endpoint'];
-        $this->revocationEndpoint = $config['revocation_endpoint'];
+        $this->endSessionEndpoint = $config['end_session_endpoint'] ?? null;
+        $this->revocationEndpoint = $config['revocation_endpoint'] ?? null;
 
         return $this;
     }
@@ -85,10 +85,10 @@ class SocialiteIdentityProvider extends AbstractProvider
     {
         return (new User)->setRaw($user)->map([
             'id' => $user['sub'],
-            'email' => $user['email'],
-            'email_verified' => $user['email_verified'],
-            'name' => $user['name'],
-            'groups' => $user['groups'],
+            'email' => $user['email'] ?? null,
+            'email_verified' => $user['email_verified'] ?? null,
+            'name' => $user['name'] ?? $user['preferred_username'] ?? null,
+            'groups' => $user['groups'] ?? [],
         ]);
     }
 }

@@ -9,6 +9,7 @@ use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Throwable;
 
@@ -31,7 +32,21 @@ class SettingsController extends Controller
                 'mail_password_set' => filled(config('mail.mailers.smtp.password')),
                 'mail_from_address' => config('mail.from.address'),
                 'mail_from_name' => config('mail.from.name'),
+                'password_login' => (bool) config('shifty.password_login'),
+                'sso_enabled' => (bool) config('shifty.sso.enabled'),
+                'sso_label' => config('shifty.sso.label'),
+                'sso_discovery_url' => config('services.identity.openid_configuration'),
+                'sso_client_id' => config('services.identity.client_id'),
+                'sso_client_secret_set' => filled(config('services.identity.client_secret')),
+                'sso_scopes' => config('shifty.sso.scopes'),
+                'sso_access_claim' => config('shifty.sso.access_claim'),
+                'sso_access_value' => config('shifty.sso.access_value'),
+                'sso_admin_claim' => config('shifty.sso.admin_claim'),
+                'sso_admin_value' => config('shifty.sso.admin_value'),
+                'sso_auto_create' => (bool) config('shifty.sso.auto_create'),
+                'sso_link_by_email' => (bool) config('shifty.sso.link_by_email'),
             ],
+            'ssoCallbackUrl' => route('auth.callback'),
             'timezones' => DateTimeZone::listIdentifiers(),
             'assets' => collect(Branding::ASSETS)->mapWithKeys(fn ($name) => [$name => Branding::assetUrl($name)]),
         ]);
@@ -58,7 +73,24 @@ class SettingsController extends Controller
             'mail_password' => 'nullable|string|max:255',
             'mail_from_address' => 'nullable|required_if:mail_mailer,smtp|email|max:255',
             'mail_from_name' => 'nullable|string|max:255',
+            'password_login' => 'required|boolean',
+            'sso_enabled' => 'required|boolean',
+            'sso_label' => 'required_if_accepted:sso_enabled|nullable|string|max:60',
+            'sso_discovery_url' => 'required_if_accepted:sso_enabled|nullable|url:https,http|max:500',
+            'sso_client_id' => 'required_if_accepted:sso_enabled|nullable|string|max:255',
+            'sso_client_secret' => 'nullable|string|max:500',
+            'sso_scopes' => 'required_if_accepted:sso_enabled|nullable|string|max:255',
+            'sso_access_claim' => 'nullable|required_with:sso_access_value|string|max:100',
+            'sso_access_value' => 'nullable|required_with:sso_access_claim|string|max:255',
+            'sso_admin_claim' => 'nullable|required_with:sso_admin_value|string|max:100',
+            'sso_admin_value' => 'nullable|required_with:sso_admin_claim|string|max:255',
+            'sso_auto_create' => 'required|boolean',
+            'sso_link_by_email' => 'required|boolean',
         ]);
+
+        if (! $request->boolean('password_login') && ! $request->boolean('sso_enabled')) {
+            throw ValidationException::withMessages(['password_login' => 'Enable password login or single sign-on.']);
+        }
 
         $values = [
             'app.name' => $validated['app_name'],
@@ -74,6 +106,25 @@ class SettingsController extends Controller
             'mail.from.address' => $validated['mail_from_address'] ?? null,
             'mail.from.name' => $validated['mail_from_name'] ?? null,
         ];
+
+        $values += [
+            'shifty.password_login' => $request->boolean('password_login'),
+            'shifty.sso.enabled' => $request->boolean('sso_enabled'),
+            'shifty.sso.label' => $validated['sso_label'] ?? null,
+            'services.identity.openid_configuration' => $validated['sso_discovery_url'] ?? null,
+            'services.identity.client_id' => $validated['sso_client_id'] ?? null,
+            'shifty.sso.scopes' => $validated['sso_scopes'] ?? null,
+            'shifty.sso.access_claim' => $validated['sso_access_claim'] ?? null,
+            'shifty.sso.access_value' => $validated['sso_access_value'] ?? null,
+            'shifty.sso.admin_claim' => $validated['sso_admin_claim'] ?? null,
+            'shifty.sso.admin_value' => $validated['sso_admin_value'] ?? null,
+            'shifty.sso.auto_create' => $request->boolean('sso_auto_create'),
+            'shifty.sso.link_by_email' => $request->boolean('sso_link_by_email'),
+        ];
+
+        if ($request->filled('sso_client_secret')) {
+            $values['services.identity.client_secret'] = $validated['sso_client_secret'];
+        }
 
         if ($request->filled('mail_password')) {
             $values['mail.mailers.smtp.password'] = $validated['mail_password'];

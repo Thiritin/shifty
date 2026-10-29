@@ -39,7 +39,6 @@ return [
         'openid_configuration' => env('IDENTITY_OPENID_CONFIGURATION'),
         'client_id' => env('IDENTITY_CLIENT_ID'),
         'client_secret' => env('IDENTITY_CLIENT_SECRET'),
-        'redirect' => env('IDENTITY_CALLBACK_URL'),
     ],
 
 ];

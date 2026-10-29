@@ -5,11 +5,8 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ShiftController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome');
-})->name('home');
+Route::redirect('/', '/dashboard')->name('home');
 
 Route::get('brand/{name}', BrandAssetController::class)->name('brand.asset');
 
@@ -32,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('shifts/{shift}/unassign/{user}', [ShiftController::class, 'adminUnassign'])->name('admin.shifts.unassign');
 
         Route::get('admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+        Route::post('admin/users', [AdminUserController::class, 'store'])->name('admin.users.store');
         Route::put('admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
 
         Route::get('admin/settings', [SettingsController::class, 'edit'])->name('admin.settings.edit');

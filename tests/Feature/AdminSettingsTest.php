@@ -23,6 +23,10 @@ class AdminSettingsTest extends TestCase
             'timezone' => 'Europe/Berlin',
             'accent_color' => '#ff6600',
             'mail_mailer' => 'log',
+            'password_login' => true,
+            'sso_enabled' => false,
+            'sso_auto_create' => true,
+            'sso_link_by_email' => false,
             ...$overrides,
         ];
     }

@@ -30,7 +30,21 @@ const props = defineProps<{
         mail_password_set: boolean
         mail_from_address: string | null
         mail_from_name: string | null
+        password_login: boolean
+        sso_enabled: boolean
+        sso_label: string | null
+        sso_discovery_url: string | null
+        sso_client_id: string | null
+        sso_client_secret_set: boolean
+        sso_scopes: string | null
+        sso_access_claim: string | null
+        sso_access_value: string | null
+        sso_admin_claim: string | null
+        sso_admin_value: string | null
+        sso_auto_create: boolean
+        sso_link_by_email: boolean
     }
+    ssoCallbackUrl: string
     timezones: string[]
     assets: Record<AssetName, string | null>
 }>()
@@ -48,6 +62,15 @@ const form = useForm({
     mail_from_address: props.settings.mail_from_address ?? '',
     mail_from_name: props.settings.mail_from_name ?? '',
     mail_password: '',
+    sso_label: props.settings.sso_label ?? '',
+    sso_discovery_url: props.settings.sso_discovery_url ?? '',
+    sso_client_id: props.settings.sso_client_id ?? '',
+    sso_client_secret: '',
+    sso_scopes: props.settings.sso_scopes ?? '',
+    sso_access_claim: props.settings.sso_access_claim ?? '',
+    sso_access_value: props.settings.sso_access_value ?? '',
+    sso_admin_claim: props.settings.sso_admin_claim ?? '',
+    sso_admin_value: props.settings.sso_admin_value ?? '',
     logo_light: null as File | null,
     logo_dark: null as File | null,
     favicon: null as File | null,
@@ -96,7 +119,7 @@ const submit = () => {
         forceFormData: true,
         preserveScroll: true,
         onSuccess: () => {
-            form.reset('mail_password', 'logo_light', 'logo_dark', 'favicon', 'remove')
+            form.reset('mail_password', 'sso_client_secret', 'logo_light', 'logo_dark', 'favicon', 'remove')
             // The accent color is rendered into the page head, which Inertia visits don't replace.
             if (accentChanged) window.location.reload()
         },
@@ -231,6 +254,102 @@ onBeforeUnmount(() => Object.values(objectUrls).forEach((u) => u && URL.revokeOb
                             </span>
                         </div>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Authentication</CardTitle>
+                </CardHeader>
+                <CardContent class="grid gap-4 md:grid-cols-2">
+                    <div class="flex items-center gap-3">
+                        <Checkbox id="password_login" :model-value="form.password_login" @update:model-value="(v) => (form.password_login = v === true)" />
+                        <Label for="password_login">Password login</Label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <Checkbox id="sso_enabled" :model-value="form.sso_enabled" @update:model-value="(v) => (form.sso_enabled = v === true)" />
+                        <Label for="sso_enabled">Single sign-on (OpenID Connect)</Label>
+                    </div>
+                    <InputError class="md:col-span-2" :message="form.errors.password_login" />
+
+                    <template v-if="form.sso_enabled">
+                        <div class="grid gap-2 md:col-span-2">
+                            <Label for="sso_callback">Callback URL</Label>
+                            <Input id="sso_callback" :model-value="ssoCallbackUrl" readonly class="font-mono" @focus="($event.target as HTMLInputElement).select()" />
+                        </div>
+                        <div class="grid gap-2 md:col-span-2">
+                            <Label for="sso_discovery_url">Discovery URL</Label>
+                            <Input id="sso_discovery_url" v-model="form.sso_discovery_url" type="url" required placeholder="https://id.example.org/.well-known/openid-configuration" />
+                            <InputError :message="form.errors.sso_discovery_url" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="sso_client_id">Client ID</Label>
+                            <Input id="sso_client_id" v-model="form.sso_client_id" required autocomplete="off" />
+                            <InputError :message="form.errors.sso_client_id" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="sso_client_secret">Client secret</Label>
+                            <Input
+                                id="sso_client_secret"
+                                v-model="form.sso_client_secret"
+                                type="password"
+                                autocomplete="new-password"
+                                :placeholder="settings.sso_client_secret_set ? '••••••••' : ''"
+                            />
+                            <InputError :message="form.errors.sso_client_secret" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="sso_label">Button label</Label>
+                            <Input id="sso_label" v-model="form.sso_label" required maxlength="60" />
+                            <InputError :message="form.errors.sso_label" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="sso_scopes">Scopes</Label>
+                            <Input id="sso_scopes" v-model="form.sso_scopes" required class="font-mono" />
+                            <InputError :message="form.errors.sso_scopes" />
+                        </div>
+
+                        <fieldset class="grid gap-2 md:col-span-2">
+                            <legend class="mb-2 text-sm font-medium">Allow sign-in only when claim contains</legend>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="grid gap-2">
+                                    <Label for="sso_access_claim">Claim</Label>
+                                    <Input id="sso_access_claim" v-model="form.sso_access_claim" class="font-mono" placeholder="groups" />
+                                    <InputError :message="form.errors.sso_access_claim" />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="sso_access_value">Value</Label>
+                                    <Input id="sso_access_value" v-model="form.sso_access_value" class="font-mono" />
+                                    <InputError :message="form.errors.sso_access_value" />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="grid gap-2 md:col-span-2">
+                            <legend class="mb-2 text-sm font-medium">Make admin when claim contains</legend>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="grid gap-2">
+                                    <Label for="sso_admin_claim">Claim</Label>
+                                    <Input id="sso_admin_claim" v-model="form.sso_admin_claim" class="font-mono" placeholder="groups" />
+                                    <InputError :message="form.errors.sso_admin_claim" />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="sso_admin_value">Value</Label>
+                                    <Input id="sso_admin_value" v-model="form.sso_admin_value" class="font-mono" />
+                                    <InputError :message="form.errors.sso_admin_value" />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <div class="flex items-center gap-3">
+                            <Checkbox id="sso_auto_create" :model-value="form.sso_auto_create" @update:model-value="(v) => (form.sso_auto_create = v === true)" />
+                            <Label for="sso_auto_create">Create accounts on first sign-in</Label>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <Checkbox id="sso_link_by_email" :model-value="form.sso_link_by_email" @update:model-value="(v) => (form.sso_link_by_email = v === true)" />
+                            <Label for="sso_link_by_email">Link to existing accounts by email</Label>
+                        </div>
+                    </template>
                 </CardContent>
             </Card>
 

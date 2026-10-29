@@ -25,10 +25,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::define('self-assign', fn (User $user) => $user->is_admin || config('shifty.self_registration'));
 
-        Socialite::extend('identity', function ($app) {
-            $config = $app['config']['services.identity'];
-
-            return Socialite::buildProvider(SocialiteIdentityProvider::class, $config);
-        });
+        Socialite::extend('identity', fn ($app) => Socialite::buildProvider(
+            SocialiteIdentityProvider::class,
+            [...$app['config']['services.identity'], 'redirect' => route('auth.callback')],
+        ));
     }
 }

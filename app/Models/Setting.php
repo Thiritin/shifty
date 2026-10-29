@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -9,13 +10,14 @@ use Illuminate\Database\SQLiteDatabaseDoesNotExistException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use PDOException;
+use WeakMap;
 
 /**
  * Keys are config keys, e.g. `mail.from.address`.
  */
 class Setting extends Model
 {
-    public const ENCRYPTED = ['mail.mailers.smtp.password'];
+    public const ENCRYPTED = ['mail.mailers.smtp.password', 'services.identity.client_secret'];
 
     public $incrementing = false;
 
@@ -29,8 +31,8 @@ class Setting extends Model
 
     protected $casts = ['value' => 'json'];
 
-    /** @var array<string, mixed> config values from before the first override */
-    private static array $defaults = [];
+    /** @var WeakMap<Repository, array<string, mixed>> per config instance, the values from before the first override */
+    private static ?WeakMap $defaults = null;
 
     public static function apply(): void
     {
@@ -40,14 +42,18 @@ class Setting extends Model
             return;
         }
 
+        $config = app('config');
+        self::$defaults ??= new WeakMap;
+        $defaults = self::$defaults[$config] ?? [];
+
         // Long-lived processes keep config between requests, so deleted overrides must be undone.
-        foreach (self::$defaults as $key => $value) {
-            config([$key => $value]);
+        foreach ($defaults as $key => $value) {
+            $config->set($key, $value);
         }
 
         foreach ($values as $key => $value) {
-            if (! array_key_exists($key, self::$defaults)) {
-                self::$defaults[$key] = config($key);
+            if (! array_key_exists($key, $defaults)) {
+                $defaults[$key] = $config->get($key);
             }
 
             if (in_array($key, self::ENCRYPTED, true)) {
@@ -58,8 +64,10 @@ class Setting extends Model
                 }
             }
 
-            config([$key => $value]);
+            $config->set($key, $value);
         }
+
+        self::$defaults[$config] = $defaults;
     }
 
     // A null or empty value deletes the override so the config default applies again.

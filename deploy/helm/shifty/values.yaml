@@ -1,0 +1,47 @@
+image:
+  repository: ghcr.io/thiritin/shifty
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# The container migrates on start, so keep one replica.
+replicaCount: 1
+
+appUrl: https://shifty.example.org
+
+# Generate with: echo "base64:$(openssl rand -base64 32)"
+appKey: ""
+
+database:
+  connection: mariadb
+  host: ""
+  port: 3306
+  name: shifty
+  username: shifty
+  password: ""
+
+# Secret with the keys APP_KEY and DB_PASSWORD, used instead of appKey and database.password.
+existingSecret: ""
+
+extraEnv: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: shifty.example.org
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

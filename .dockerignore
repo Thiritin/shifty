@@ -14,3 +14,5 @@ storage/framework/views/*
 database/*.sqlite
 tests
 .phpunit.result.cache
+deploy
+.github/workflows

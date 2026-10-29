@@ -70,21 +70,27 @@ class InstallerTest extends TestCase
 
     public function test_missing_sqlite_file_shows_the_database_setup_page()
     {
-        config(['database.connections.sqlite.database' => storage_path('framework/testing/missing.sqlite')]);
+        $default = config('database.default');
+        config([
+            'database.default' => 'sqlite',
+            'database.connections.sqlite.database' => storage_path('framework/testing/missing.sqlite'),
+        ]);
 
         $this->get('/login')->assertStatus(503)->assertSee('DB_CONNECTION=mysql');
+
+        config(['database.default' => $default]);
     }
 
     public function test_unreachable_database_shows_the_error_page()
     {
+        $default = config('database.default');
         config([
-            'database.default' => 'mysql',
-            'database.connections.mysql.host' => '127.0.0.1',
-            'database.connections.mysql.port' => 1,
+            'database.default' => 'unreachable',
+            'database.connections.unreachable' => [...config('database.connections.mysql'), 'url' => null, 'host' => '127.0.0.1', 'port' => 1],
         ]);
 
         $this->get('/login')->assertStatus(503)->assertSee('The database is not reachable')->assertSee('127.0.0.1:1');
 
-        config(['database.default' => 'sqlite']);
+        config(['database.default' => $default]);
     }
 }

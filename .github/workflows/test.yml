@@ -1,0 +1,53 @@
+name: Tests
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, gd, intl, pdo_sqlite, zip
+          coverage: none
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci
+
+      - name: Prepare app
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan wayfinder:generate
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+      - name: ESLint
+        run: npx eslint .
+
+      - name: Type check
+        run: npx vue-tsc --noEmit
+
+      - name: PHPUnit
+        run: php artisan test
+
+      - name: Build assets
+        run: npm run build

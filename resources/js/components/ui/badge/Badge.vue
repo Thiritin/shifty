@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type HTMLAttributes } from 'vue'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
@@ -23,17 +23,15 @@ const badgeVariants = cva(
   }
 )
 
-export interface BadgeProps extends /* @vue-ignore */ VariantProps<typeof badgeVariants> {}
-
-const props = withDefaults(defineProps<BadgeProps>(), {
+const props = withDefaults(defineProps<{ variant?: NonNullable<VariantProps<typeof badgeVariants>['variant']>; class?: HTMLAttributes['class'] }>(), {
   variant: 'default',
 })
 
-const badgeClass = computed(() => badgeVariants(props))
+const badgeClass = computed(() => cn(badgeVariants({ variant: props.variant }), props.class))
 </script>
 
 <template>
-  <div :class="cn(badgeClass)">
+  <div :class="badgeClass">
     <slot />
   </div>
 </template>

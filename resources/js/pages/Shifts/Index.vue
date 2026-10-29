@@ -404,8 +404,6 @@ const adminUnassignUser = (userId: number) => {
                                                 <Link v-if="user.is_admin" :href="`/shifts/${shift.id}`" class="hover:underline">{{ shift.name }}</Link>
                                                 <template v-else>{{ shift.name }}</template>
                                             </CardTitle>
-                                            <Badge v-if="shift.my_status === 'green'" variant="outline" class="border-emerald-600 text-emerald-700 dark:text-emerald-400">Available</Badge>
-                                            <Badge v-else-if="shift.my_status === 'red'" variant="outline" class="border-red-600 text-red-700 dark:text-red-400">Unavailable</Badge>
                                             <!-- Admin Action Icons -->
                                             <div v-if="user.is_admin" class="flex gap-1 ml-2">
                                                 <Button
@@ -453,6 +451,8 @@ const adminUnassignUser = (userId: number) => {
                                     <div class="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Clock class="h-4 w-4" />
                                         {{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }}
+                                        <Badge v-if="shift.my_status === 'green'" variant="outline" class="ml-auto border-emerald-600 text-emerald-700 dark:text-emerald-400">Available</Badge>
+                                        <Badge v-else-if="shift.my_status === 'red'" variant="outline" class="ml-auto border-red-600 text-red-700 dark:text-red-400">Unavailable</Badge>
                                     </div>
                                     <div class="space-y-2">
                                         <div class="flex items-center justify-between text-sm">

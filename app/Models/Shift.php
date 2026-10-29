@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -69,6 +70,18 @@ class Shift extends Model
         }
         // If it's already HH:MM:SS, keep it, otherwise add :00
         $this->attributes['end_time'] = strlen($value) === 5 ? $value.':00' : $value;
+    }
+
+    public function startsAt(): Carbon
+    {
+        return Carbon::parse($this->date->format('Y-m-d').' '.$this->start_time);
+    }
+
+    public function endsAt(): Carbon
+    {
+        $end = Carbon::parse($this->date->format('Y-m-d').' '.$this->end_time);
+
+        return $end->lte($this->startsAt()) ? $end->addDay() : $end;
     }
 
     public function users(): BelongsToMany

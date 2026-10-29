@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Shift;
 use App\Models\User;
+use App\Support\ShiftCandidates;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -74,17 +75,22 @@ class ShiftController extends Controller
     {
         $user = Auth::user();
 
+        $myMarks = $user->availabilities()->pluck('status', 'starts_at');
+
         // Get all shifts (no week filtering, only show days with shifts)
         $shifts = Shift::with('users')
             ->orderBy('date')
             ->orderBy('start_time')
             ->get()
-            ->map(function ($shift) use ($user) {
+            ->map(function ($shift) use ($user, $myMarks) {
+                $hours = ShiftCandidates::hours($shift);
+
                 return [
                     'id' => $shift->id,
                     'name' => $shift->name,
                     'description' => $shift->description,
                     'date' => $shift->date,
+                    'my_status' => ShiftCandidates::status($hours->map(fn ($h) => $myMarks[$h] ?? null)->filter(), $hours->count()),
                     'start_time' => $shift->start_time,
                     'end_time' => $shift->end_time,
                     'required_people' => $shift->required_people,
@@ -121,6 +127,25 @@ class ShiftController extends Controller
                 'dog_mood' => $user->dog_mood,
             ],
             'allUsers' => $allUsers,
+        ]);
+    }
+
+    public function show(Shift $shift)
+    {
+        $shift->load('users');
+
+        return Inertia::render('Admin/Shifts/Show', [
+            'shift' => [
+                'id' => $shift->id,
+                'name' => $shift->name,
+                'description' => $shift->description,
+                'date' => $shift->date->format('Y-m-d'),
+                'start_time' => $shift->start_time,
+                'end_time' => $shift->end_time,
+                'required_people' => $shift->required_people,
+                'users' => $shift->users->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email]),
+            ],
+            'candidates' => ShiftCandidates::for($shift),
         ]);
     }
 
@@ -200,23 +225,23 @@ class ShiftController extends Controller
     public function adminAssign(Request $request, Shift $shift, User $user)
     {
         if ($shift->users->count() >= $shift->required_people) {
-            return redirect()->route('shifts.index')->with('error', 'Shift is already full.');
+            return back()->with('error', 'Shift is already full.');
         }
 
         if ($shift->users->contains($user)) {
-            return redirect()->route('shifts.index')->with('error', 'User is already assigned to this shift.');
+            return back()->with('error', 'User is already assigned to this shift.');
         }
 
         $shift->users()->attach($user);
 
-        return redirect()->route('shifts.index')->with('message', 'User assigned to shift successfully.');
+        return back()->with('message', 'User assigned to shift successfully.');
     }
 
     public function adminUnassign(Shift $shift, User $user)
     {
         $shift->users()->detach($user);
 
-        return redirect()->route('shifts.index')->with('message', 'User removed from shift successfully.');
+        return back()->with('message', 'User removed from shift successfully.');
     }
 
     public function print(Request $request)

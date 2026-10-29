@@ -10,6 +10,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/availability', [AvailabilityController::class, 'edit'])->name('availability.edit');
     Route::patch('settings/availability', [AvailabilityController::class, 'update'])->name('availability.update');
+    Route::put('settings/availability/hours', [AvailabilityController::class, 'updateHours'])->name('availability.hours');
     Route::post('settings/availability/intro', [AvailabilityController::class, 'completeIntro'])->name('availability.intro');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');

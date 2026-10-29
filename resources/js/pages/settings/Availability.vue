@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Calendar, Clock, MapPin } from 'lucide-vue-next'
 import dayjs from 'dayjs'
+import AvailabilityGrid from '@/components/AvailabilityGrid.vue'
 
 interface User {
     id: number
@@ -23,6 +24,7 @@ interface User {
 
 const props = defineProps<{
     user: User
+    grid: InstanceType<typeof AvailabilityGrid>['$props']['grid']
 }>()
 
 const processing = ref(false)
@@ -198,6 +200,16 @@ const formatDisplayTime = (timeStr: string) => {
                             </Button>
                         </div>
                     </form>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Hourly availability</CardTitle>
+                    <CardDescription>Mark the hours you can work in green and the hours you cannot in red.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AvailabilityGrid :key="`${grid.arrivesAt}-${grid.departsAt}`" :grid="grid" />
                 </CardContent>
             </Card>
         </div>

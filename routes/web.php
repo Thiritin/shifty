@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::post('shifts', [ShiftController::class, 'store'])->name('admin.shifts.store');
         Route::put('shifts/{shift}', [ShiftController::class, 'update'])->name('admin.shifts.update');
+        Route::get('shifts/{shift}', [ShiftController::class, 'show'])->whereNumber('shift')->name('admin.shifts.show');
         Route::delete('shifts/{shift}', [ShiftController::class, 'destroy'])->name('admin.shifts.destroy');
         Route::post('shifts/{shift}/assign/{user}', [ShiftController::class, 'adminAssign'])->name('admin.shifts.assign');
         Route::delete('shifts/{shift}/unassign/{user}', [ShiftController::class, 'adminUnassign'])->name('admin.shifts.unassign');

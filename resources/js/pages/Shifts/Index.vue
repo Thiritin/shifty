@@ -55,6 +55,7 @@ interface Shift {
     assigned_count: number
     is_assigned: boolean
     is_full: boolean
+    my_status: 'green' | 'red' | 'neutral'
     users: ShiftUser[]
 }
 
@@ -162,11 +163,12 @@ const getInitials = (name: string) => {
 const page = usePage()
 const canSelfAssign = computed(() => page.props.selfRegistration || props.user.is_admin)
 
-const assignToShift = (shiftId: number) => {
+const assignToShift = (shift: Shift) => {
     if (processing.value) return
+    if (shift.my_status === 'red' && !confirm('You marked yourself unavailable for part of this shift. Sign up anyway?')) return
     
     processing.value = true
-    router.post(`/shifts/${shiftId}/assign`, {}, {
+    router.post(`/shifts/${shift.id}/assign`, {}, {
         onFinish: () => {
             processing.value = false
         }
@@ -398,7 +400,12 @@ const adminUnassignUser = (userId: number) => {
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2">
-                                            <CardTitle class="text-lg">{{ shift.name }}</CardTitle>
+                                            <CardTitle class="text-lg">
+                                                <Link v-if="user.is_admin" :href="`/shifts/${shift.id}`" class="hover:underline">{{ shift.name }}</Link>
+                                                <template v-else>{{ shift.name }}</template>
+                                            </CardTitle>
+                                            <Badge v-if="shift.my_status === 'green'" variant="outline" class="border-emerald-600 text-emerald-700 dark:text-emerald-400">Available</Badge>
+                                            <Badge v-else-if="shift.my_status === 'red'" variant="outline" class="border-red-600 text-red-700 dark:text-red-400">Unavailable</Badge>
                                             <!-- Admin Action Icons -->
                                             <div v-if="user.is_admin" class="flex gap-1 ml-2">
                                                 <Button
@@ -499,7 +506,7 @@ const adminUnassignUser = (userId: number) => {
                                 <div v-if="canSelfAssign" class="pt-2">
                                     <Button 
                                         v-if="!shift.is_assigned && !shift.is_full"
-                                        @click="assignToShift(shift.id)"
+                                        @click="assignToShift(shift)"
                                         :disabled="processing"
                                         class="w-full"
                                     >

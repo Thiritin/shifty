@@ -6,8 +6,10 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 class User extends Authenticatable
 {
@@ -57,6 +59,21 @@ class User extends Authenticatable
             'arrival_date' => 'date',
             'departure_date' => 'date',
         ];
+    }
+
+    public function availabilities(): HasMany
+    {
+        return $this->hasMany(Availability::class);
+    }
+
+    public function arrivesAt(): ?Carbon
+    {
+        return $this->arrival_date?->copy()->setTimeFromTimeString($this->arrival_time ?? '00:00');
+    }
+
+    public function departsAt(): ?Carbon
+    {
+        return $this->departure_date?->copy()->setTimeFromTimeString($this->departure_time ?? '23:59:59');
     }
 
     public function shifts(): BelongsToMany

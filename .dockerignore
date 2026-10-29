@@ -16,3 +16,5 @@ tests
 .phpunit.result.cache
 deploy
 .github/workflows
+docs
+.github/assets

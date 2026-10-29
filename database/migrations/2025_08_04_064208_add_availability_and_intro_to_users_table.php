@@ -27,11 +27,11 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
-                'arrival_time', 
-                'departure_time', 
-                'arrival_date', 
-                'departure_date', 
-                'has_seen_intro'
+                'arrival_time',
+                'departure_time',
+                'arrival_date',
+                'departure_date',
+                'has_seen_intro',
             ]);
         });
     }

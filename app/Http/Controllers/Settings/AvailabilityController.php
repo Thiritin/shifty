@@ -13,7 +13,7 @@ class AvailabilityController extends Controller
     public function edit()
     {
         return Inertia::render('settings/Availability', [
-            'user' => Auth::user()
+            'user' => Auth::user(),
         ]);
     }
 

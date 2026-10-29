@@ -43,7 +43,7 @@ class ShiftSeeder extends Seeder
 
         // Create shifts for this week and next week
         $startDate = Carbon::now()->startOfWeek();
-        
+
         $shiftTemplates = [
             ['name' => 'Morning Shift', 'start_time' => '08:00', 'end_time' => '16:00', 'required_people' => 2],
             ['name' => 'Afternoon Shift', 'start_time' => '12:00', 'end_time' => '20:00', 'required_people' => 2],
@@ -55,7 +55,7 @@ class ShiftSeeder extends Seeder
         for ($week = 0; $week < 2; $week++) {
             for ($day = 0; $day < 7; $day++) {
                 $date = $startDate->copy()->addWeeks($week)->addDays($day);
-                
+
                 // Skip weekends for some shifts
                 if ($date->isWeekend()) {
                     continue;
@@ -63,23 +63,27 @@ class ShiftSeeder extends Seeder
 
                 foreach ($shiftTemplates as $index => $template) {
                     // Only create some shifts to make it more realistic
-                    if ($day === 0 && $index > 1) continue; // Monday only morning/afternoon
-                    if ($day === 4 && $index > 2) continue; // Friday only morning/afternoon/evening
-                    
+                    if ($day === 0 && $index > 1) {
+                        continue;
+                    } // Monday only morning/afternoon
+                    if ($day === 4 && $index > 2) {
+                        continue;
+                    } // Friday only morning/afternoon/evening
+
                     $shift = Shift::create([
                         'name' => $template['name'],
                         'date' => $date->format('Y-m-d'),
                         'start_time' => $template['start_time'],
                         'end_time' => $template['end_time'],
                         'required_people' => $template['required_people'],
-                        'description' => 'Standard ' . strtolower($template['name']) . ' coverage',
+                        'description' => 'Standard '.strtolower($template['name']).' coverage',
                     ]);
 
                     // Randomly assign some users to shifts (about 70% coverage)
                     if (random_int(1, 100) <= 70) {
                         $allUsers = User::all();
                         $usersToAssign = $allUsers->random(min($template['required_people'], random_int(1, $template['required_people'])));
-                        
+
                         foreach ($usersToAssign as $user) {
                             $shift->users()->attach($user);
                         }

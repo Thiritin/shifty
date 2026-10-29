@@ -28,7 +28,10 @@ class Shift extends Model
     // Accessor for start_time to ensure consistent format
     public function getStartTimeAttribute($value)
     {
-        if (!$value) return $value;
+        if (! $value) {
+            return $value;
+        }
+
         // Ensure we return HH:MM format
         return substr($value, 0, 5);
     }
@@ -36,7 +39,10 @@ class Shift extends Model
     // Accessor for end_time to ensure consistent format
     public function getEndTimeAttribute($value)
     {
-        if (!$value) return $value;
+        if (! $value) {
+            return $value;
+        }
+
         // Ensure we return HH:MM format
         return substr($value, 0, 5);
     }
@@ -44,23 +50,25 @@ class Shift extends Model
     // Mutator for start_time to store in HH:MM:SS format
     public function setStartTimeAttribute($value)
     {
-        if (!$value) {
+        if (! $value) {
             $this->attributes['start_time'] = null;
+
             return;
         }
         // If it's already HH:MM:SS, keep it, otherwise add :00
-        $this->attributes['start_time'] = strlen($value) === 5 ? $value . ':00' : $value;
+        $this->attributes['start_time'] = strlen($value) === 5 ? $value.':00' : $value;
     }
 
     // Mutator for end_time to store in HH:MM:SS format
     public function setEndTimeAttribute($value)
     {
-        if (!$value) {
+        if (! $value) {
             $this->attributes['end_time'] = null;
+
             return;
         }
         // If it's already HH:MM:SS, keep it, otherwise add :00
-        $this->attributes['end_time'] = strlen($value) === 5 ? $value . ':00' : $value;
+        $this->attributes['end_time'] = strlen($value) === 5 ? $value.':00' : $value;
     }
 
     public function users(): BelongsToMany
@@ -86,6 +94,7 @@ class Shift extends Model
     public function scopeForWeek($query, $startDate)
     {
         $endDate = $startDate->copy()->addDays(6);
+
         return $query->whereBetween('date', [$startDate, $endDate])->orderBy('date')->orderBy('start_time');
     }
 }

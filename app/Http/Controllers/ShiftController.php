@@ -16,10 +16,10 @@ class ShiftController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        
+
         // Get all shifts stats (not just current week since EF is only one week)
         $shifts = Shift::with('users')->get();
-        
+
         $totalShifts = $shifts->count();
         $totalSpots = $shifts->sum('required_people');
         $filledSpots = $shifts->sum('assigned_count');
@@ -28,9 +28,9 @@ class ShiftController extends Controller
         });
 
         // Get user's assigned shifts
-        $userShifts = Shift::whereHas('users', function($query) use ($user) {
+        $userShifts = Shift::whereHas('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
-        })->with('users')->orderBy('date')->orderBy('start_time')->get()->map(function ($shift) use ($user) {
+        })->with('users')->orderBy('date')->orderBy('start_time')->get()->map(function ($shift) {
             return [
                 'id' => $shift->id,
                 'name' => $shift->name,
@@ -55,7 +55,7 @@ class ShiftController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'is_admin' => $user->is_admin,
-                'shift_count' => Shift::whereHas('users', function($query) use ($user) {
+                'shift_count' => Shift::whereHas('users', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })->count(),
                 'shifts_expected' => $user->shifts_expected,
@@ -73,7 +73,7 @@ class ShiftController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         // Get all shifts (no week filtering, only show days with shifts)
         $shifts = Shift::with('users')
             ->orderBy('date')
@@ -114,7 +114,7 @@ class ShiftController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'is_admin' => $user->is_admin,
-                'shift_count' => Shift::whereHas('users', function($query) use ($user) {
+                'shift_count' => Shift::whereHas('users', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })->count(),
                 'shifts_expected' => $user->shifts_expected,
@@ -149,7 +149,7 @@ class ShiftController extends Controller
 
         $user = Auth::user();
 
-        if (!$shift->users->contains($user)) {
+        if (! $shift->users->contains($user)) {
             return back()->with('error', 'You are not assigned to this shift.');
         }
 
@@ -233,14 +233,14 @@ class ShiftController extends Controller
     public function calendar(Request $request)
     {
         $user = Auth::user();
-        
+
         // Generate calendar for user's shifts
-        $shifts = Shift::whereHas('users', function($query) use ($user) {
+        $shifts = Shift::whereHas('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->orderBy('date')->orderBy('start_time')->get();
-        
+
         $icsContent = $this->generateICS($shifts, $user);
-        
+
         return response($icsContent)
             ->header('Content-Type', 'text/calendar')
             ->header('Content-Disposition', 'attachment; filename="'.Str::slug(config('app.name')).'-shifts.ics"');
@@ -250,30 +250,30 @@ class ShiftController extends Controller
     {
         $ics = "BEGIN:VCALENDAR\r\n";
         $ics .= "VERSION:2.0\r\n";
-        $ics .= "PRODID:-//".$this->escapeICS(config('app.name'))."//Shifts//EN\r\n";
+        $ics .= 'PRODID:-//'.$this->escapeICS(config('app.name'))."//Shifts//EN\r\n";
         $ics .= "CALSCALE:GREGORIAN\r\n";
-        
+
         foreach ($shifts as $shift) {
-            $startDateTime = Carbon::parse($shift->date . ' ' . $shift->start_time, config('shifty.timezone'));
-            $endDateTime = Carbon::parse($shift->date . ' ' . $shift->end_time, config('shifty.timezone'));
-            
+            $startDateTime = Carbon::parse($shift->date.' '.$shift->start_time, config('shifty.timezone'));
+            $endDateTime = Carbon::parse($shift->date.' '.$shift->end_time, config('shifty.timezone'));
+
             $ics .= "BEGIN:VEVENT\r\n";
-            $ics .= "UID:" . $shift->id . "@" . parse_url(config('app.url'), PHP_URL_HOST) . "\r\n";
-            $ics .= "DTSTART:" . $startDateTime->utc()->format('Ymd\THis\Z') . "\r\n";
-            $ics .= "DTEND:" . $endDateTime->utc()->format('Ymd\THis\Z') . "\r\n";
-            $ics .= "SUMMARY:" . $this->escapeICS($shift->name) . "\r\n";
-            $ics .= "DESCRIPTION:" . $this->escapeICS($shift->description ?: $shift->name) . "\r\n";
+            $ics .= 'UID:'.$shift->id.'@'.parse_url(config('app.url'), PHP_URL_HOST)."\r\n";
+            $ics .= 'DTSTART:'.$startDateTime->utc()->format('Ymd\THis\Z')."\r\n";
+            $ics .= 'DTEND:'.$endDateTime->utc()->format('Ymd\THis\Z')."\r\n";
+            $ics .= 'SUMMARY:'.$this->escapeICS($shift->name)."\r\n";
+            $ics .= 'DESCRIPTION:'.$this->escapeICS($shift->description ?: $shift->name)."\r\n";
             $ics .= "STATUS:CONFIRMED\r\n";
             $ics .= "END:VEVENT\r\n";
         }
-        
+
         $ics .= "END:VCALENDAR\r\n";
-        
+
         return $ics;
     }
 
     private function escapeICS($text)
     {
-        return str_replace(["\n", "\r", ",", ";"], ["\\n", "\\r", "\\,", "\\;"], $text);
+        return str_replace(["\n", "\r", ',', ';'], ['\\n', '\\r', '\\,', '\\;'], $text);
     }
 }

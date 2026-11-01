@@ -39,7 +39,7 @@ RUN composer dump-autoload --optimize \
 ######################################################
 # NodeJS Stage
 ######################################################
-FROM node:24-alpine AS vite
+FROM node:26-alpine AS vite
 WORKDIR /app
 COPY package.json package-lock.json vite.config.ts ./
 RUN npm install --force
